@@ -32,24 +32,6 @@ beaverspred <- data.frame(time=rep(seq(min(beavers$time),max(beavers$time),lengt
                            year=factor(levels(beavers$year)[1],levels=levels(beavers$year)),
                            sex=factor(rep(c("M","F"),each=100),levels=levels(beavers$sex)))
 
-
-## DELETE THIS: code for adding beavers data to mam ##
-# beavers1 <- read.csv("~/work/projects/marginalmodels/data/beavers1.csv")
-#
-# beavers1$y01 <-beavers1$Tree
-# beavers1$id <- as.numeric(as.factor(beavers1$Beaver))
-# beavers1 <- beavers1[order(beavers1$id),]
-# beavers1$time <- beavers1$Julian_day
-# beavers1$Sex <- as.factor(beavers1$Sex)
-# beavers1$timeF <- beavers1$time;beavers1$timeF[beavers1$Sex=="M"] <- 0
-# beavers1$timeM <- beavers1$time;beavers1$timeM[beavers1$Sex=="F"] <- 0
-#
-# beavers1$Year01 <- (factor(beavers1$Year))
-#
-# beavers <- beavers1[ ,c('y01','id','time','Sex','timeF','timeM','Year01')]
-# usethis::use_data(beavers,overwrite = TRUE)
-## END DELETE THIS ##
-
 # Fit the model
 bv.mam <- mam(
   smooth = list(s(timeF),s(timeM)),

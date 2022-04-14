@@ -162,7 +162,6 @@ narows <- apply(preddat,1,function(x) any(is.na(x)))
 preddat <- preddat[!narows, ]
 loagridpoints <- loagridpoints[!narows, ]
 # Fit the model
-# mamsmoothlist <- list(s(long,lat,bs='gp',m = c(-3,rng)),s(evi),s(elevation))
 mamsmoothlist <- interpret.gam(gamformula)$smooth.spec
 
 themam <- mam(
@@ -262,12 +261,6 @@ evi_gam_plot <- ggplot(data=evi_gg_data,aes(x=evi,y=pred))+
 ggsave(filename = file.path(plotpath,"evi-gam.pdf"),plot = evi_gam_plot,width=PLOTWIDTH,height=PLOTHEIGHT)
 
 
-# pdf(file.path(plotpath,"evi-gam.pdf"),width=PLOTWIDTH,height=PLOTHEIGHT)
-# plot(evipreddat$evi,evipred$fit[ ,'s(evi)'],type='l',ylim=myylim,main="",xlab = "Evi (standardized)",ylab = "f(Evi)")
-# lines(evipreddat$evi,evipred$fit[ ,'s(evi)']-2*evipred$se.fit[ ,'s(evi)'],lty='dashed')
-# lines(evipreddat$evi,evipred$fit[ ,'s(evi)']+2*evipred$se.fit[ ,'s(evi)'],lty='dashed')
-# dev.off()
-
 elevpreddat <- data.frame(elevation=with(gamdat,seq(min(elevation),max(elevation),length.out=1e03)),evi=0,long=0,lat=0)
 elevpred <- predict(gammodbinomial,newdata=elevpreddat,se.fit=TRUE,type='terms')
 elev_gg_data <- data.frame(
@@ -285,12 +278,6 @@ elev_gam_plot <- ggplot(data=elev_gg_data,aes(x=elevation,y=pred))+
   ylab(expression(f^M~(elevation))) +
   theme(text = element_text(size = GGPLOTTEXTSIZE))
 ggsave(filename = file.path(plotpath,"elev-gam.pdf"),plot = elev_gam_plot,width=PLOTWIDTH,height=PLOTHEIGHT)
-# myylim = c(-5,2)
-# pdf(file.path(plotpath,"elev-gam.pdf"),width=PLOTWIDTH,height=PLOTHEIGHT)
-# plot(evipreddat$evi,elevpred$fit[ ,'s(elevation)'],type='l',ylim=myylim,main="",xlab = "Elevation (standardized)",ylab = "f(Elevation)")
-# lines(evipreddat$evi,elevpred$fit[ ,'s(elevation)']-2*elevpred$se.fit[ ,'s(elevation)'],lty='dashed')
-# lines(evipreddat$evi,elevpred$fit[ ,'s(elevation)']+2*elevpred$se.fit[ ,'s(elevation)'],lty='dashed')
-# dev.off()
 
 ## MAM ##
 
@@ -356,13 +343,6 @@ evi_mam_plot <- ggplot(data=evi_gg_data,aes(x=evi,y=pred))+
 ggsave(filename = file.path(plotpath,"evi-mam.pdf"),plot = evi_mam_plot,width=PLOTWIDTH,height=PLOTHEIGHT)
 
 
-# myylim <- c(-2,2)
-# pdf(file.path(plotpath,"evi-mam.pdf"),width=PLOTWIDTH,height=PLOTHEIGHT)
-# plot(evipred$evi,eviest_marg,type='l',ylim=myylim,main="",xlab = "Evi (standardized)",ylab = "f(Evi)")
-# lines(evipred$evi,eviest_marg-2*eviest_marg_se,lty='dashed')
-# lines(evipred$evi,eviest_marg+2*eviest_marg_se,lty='dashed')
-# dev.off()
-
 # Elevation
 elevSSidx <- 3 # Which smooth term it is
 elevpred <- data.frame(elevation = with(gamdat,seq(min(elevation),max(elevation),length.out=1e03)),evi=0,long=0,lat=0)
@@ -392,11 +372,6 @@ elev_mam_plot <- ggplot(data=elev_gg_data,aes(x=elevation,y=pred))+
   theme(text = element_text(size = GGPLOTTEXTSIZE))
 ggsave(filename = file.path(plotpath,"elev-mam.pdf"),plot = elev_mam_plot,width=PLOTWIDTH,height=PLOTHEIGHT)
 
-# pdf(file.path(plotpath,"elevation-mam.pdf"),width=PLOTWIDTH,height=PLOTHEIGHT)
-# plot(elevpred$elevation,elevest_marg,type='l',ylim=myylim,main="",xlab = "Elevation (standardized)",ylab = "f(Elevation)")
-# lines(elevpred$elevation,elevest_marg-2*elevest_marg_se,lty='dashed')
-# lines(elevpred$elevation,elevest_marg+2*elevest_marg_se,lty='dashed')
-# dev.off()
 
 ## Spatial effect ##
 
@@ -444,17 +419,13 @@ dev.off()
 
 predUpoints <- SpatialPointsDataFrame(coords = loaloa@coords,data = data.frame(predU = Uest),bbox = loaloa@bbox,proj4string = loaloa@proj4string)
 
-# Colour by sign, size by magnitude
-# sz <- abs(Uest)
-# cl <- sapply(Uest/abs(Uest),function(x) switch(as.character(x),'1'='red','-1'='green'))
-# New: size by village size, colour by signed value on same scale as maps
+# Size by village size, colour by signed value on same scale as maps
 sz <- loaloa$N/max(loaloa$N) * 2
 cl <- mapmisc::colourScale(Uest,breaks = bU,style='fixed',col='Spectral',rev=TRUE)
 plotord <- order(abs(predUpoints$predU),decreasing = FALSE)
 
 pdf(file.path(plotpath,"U-map.pdf"),width=MAPWIDTH,height=MAPHEIGHT)
 mapmisc::map.new(loaloa,legendRight = TRUE)
-# points(loaloa,pch = 4)
 plot(fullborder,add = TRUE,border=mapmisc::col2html("black", 0.5), lwd=0.5)
 plot(fullborderouter,add = TRUE)
 points(predUpoints[plotord, ],col = cl$plot[plotord],cex = 3*sz[plotord],pch=20)

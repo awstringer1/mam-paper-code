@@ -98,7 +98,7 @@ do_simulation_multiple <- function(K,Nk,sigma0,sigma3,rho,iter=0,verbose=FALSE) 
   gam1 <- gam(y~s(x1)+s(x2)+x3,data=dat,family=binomial(),method="REML")
   gamfit <- predict(gam1,newdata=dat2pred,se.fit=TRUE)
   gamfitted <- gamfit$fit
-  gamfitted_se <- gamfit$se.fit ## these are naive
+  gamfitted_se <- gamfit$se.fit
   
   # MAM (proposed approach)
   if(!slopes){
@@ -550,28 +550,28 @@ dev.off()
 
 cat("Done. Output saved at",globalpath,"\n")
 
-# Helper code for printing the table, not run
-# Table 1 (manuscript)
-resultstable %>%
-  filter(sigma0==2,sigma3==1,rho==.5) %>%
-  arrange(sigma0,K,Nk) %>%
-  mutate(across(contains('covr'),~round(.x*100))) %>%
-  dplyr::select(contains(c("K","Nk","sigma0",'mam'))) %>%
-  knitr::kable(
-    digits = 2,
-    format = 'markdown' # markdown, not latex, easier copying
-  )
-# Table 1 (supplememnt)
-resultstable %>%
-  filter(sigma3==0,rho==0) %>%
-  arrange(sigma0,K,Nk) %>%
-  mutate(across(contains('covr'),~round(.x*100))) %>%
-  dplyr::select(-contains(c("slope","cor"))) %>%
-  # dplyr::select(contains(c("K","Nk","sigma0",'mam'))) %>% # For printing each variable individually
-  knitr::kable(
-    digits = 2,
-    format = 'markdown' # markdown, not latex, easier copying
-  )
+# # Helper code for printing the table, not run
+# # Table 1 (manuscript)
+# resultstable %>%
+#   filter(sigma0==2,sigma3==1,rho==.5) %>%
+#   arrange(sigma0,K,Nk) %>%
+#   mutate(across(contains('covr'),~round(.x*100))) %>%
+#   dplyr::select(contains(c("K","Nk","sigma0",'mam'))) %>%
+#   knitr::kable(
+#     digits = 2,
+#     format = 'markdown' # markdown, not latex, easier copying
+#   )
+# # Table 1 (supplememnt)
+# resultstable %>%
+#   filter(sigma3==0,rho==0) %>%
+#   arrange(sigma0,K,Nk) %>%
+#   mutate(across(contains('covr'),~round(.x*100))) %>%
+#   dplyr::select(-contains(c("slope","cor"))) %>%
+#   # dplyr::select(contains(c("K","Nk","sigma0",'mam'))) %>% # For printing each variable individually
+#   knitr::kable(
+#     digits = 2,
+#     format = 'markdown' # markdown, not latex, easier copying
+#   )
 
 
 
