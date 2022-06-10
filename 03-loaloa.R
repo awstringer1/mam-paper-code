@@ -131,7 +131,8 @@ loagridpoints <- rasterToPoints(rr,spatial = TRUE)
 
 ## Models ----
 gamformula <- cbind(y,failures) ~ s(long,lat,bs='gp',m = c(-3,rng)) + s(evi) + s(elevation)
-
+gamformula_bernoulli <- update(gamformula,y ~ .)
+gamformula_re <- update(gamformula_bernoulli, ~ . + s(id,bs='re'))
 # Fit the quasibinomial, for dispersion parameter
 gammodquasibinomial <- gam(
   gamformula,
@@ -149,6 +150,24 @@ gammodbinomial <- gam(
   method = 'ML',
   data = gamdat
 )
+
+# Bernoulli GAM (conditional) #
+# No RE-- should be identical to binomial gam
+gammodbernoulli_nore <- gam(
+  gamformula_bernoulli,
+  family = binomial(),
+  method = 'ML',
+  data = gamdatexpand
+)
+# With RE-- should be better
+gammodbernoulli_re <- gam(
+  gamformula_re,
+  family = binomial(),
+  method = 'ML',
+  data = gamdatexpand
+)
+
+
 
 # Bernoulli MAM #
 # Need to provide some prediction data (for now)
@@ -239,6 +258,38 @@ loagridpixels <- SpatialPixelsDataFrame(loagridpointsframe,data = loagridpointsf
 loagridraster <- raster(loagridpixels)
 pdf(file.path(plotpath,"gam-spatialeffect-upper.pdf"),width=MAPWIDTH,height=MAPHEIGHT)
 plot_loaloa(loagridraster,breaks = bU)
+dev.off()
+
+# Mean #
+binommeanpred <- predict(gammodbinomial,newdata = preddat,type = 'link',se.fit=TRUE)
+binommeanpred_fit <- ilogit(binommeanpred$fit)
+binommeanpred_lower <- ilogit(binommeanpred$fit - 2*binommeanpred$se.fit)
+binommeanpred_upper <- ilogit(binommeanpred$fit + 2*binommeanpred$se.fit)
+# Estimate
+smoothpreds <- data.frame(pred = binommeanpred_fit)
+loagridpointsframe <- SpatialPointsDataFrame(coords = loagridpoints@coords,data = smoothpreds,proj4string = loagridpoints@proj4string,bbox = loagridpoints@bbox)
+loagridpixels <- SpatialPixelsDataFrame(loagridpointsframe,data = loagridpointsframe@data)
+loagridraster <- raster(loagridpixels)
+pdf(file.path(plotpath,"gam-mean-est.pdf"),width=MAPWIDTH,height=MAPHEIGHT)
+plot_loaloa(loagridraster,breaks = br)
+dev.off()
+
+# Lower
+smoothpreds <- data.frame(pred = binommeanpred_lower)
+loagridpointsframe <- SpatialPointsDataFrame(coords = loagridpoints@coords,data = smoothpreds,proj4string = loagridpoints@proj4string,bbox = loagridpoints@bbox)
+loagridpixels <- SpatialPixelsDataFrame(loagridpointsframe,data = loagridpointsframe@data)
+loagridraster <- raster(loagridpixels)
+pdf(file.path(plotpath,"gam-mean-lower.pdf"),width=MAPWIDTH,height=MAPHEIGHT)
+plot_loaloa(loagridraster,breaks = br)
+dev.off()
+
+# Upper
+smoothpreds <- data.frame(pred = binommeanpred_upper)
+loagridpointsframe <- SpatialPointsDataFrame(coords = loagridpoints@coords,data = smoothpreds,proj4string = loagridpoints@proj4string,bbox = loagridpoints@bbox)
+loagridpixels <- SpatialPixelsDataFrame(loagridpointsframe,data = loagridpointsframe@data)
+loagridraster <- raster(loagridpixels)
+pdf(file.path(plotpath,"gam-mean-upper.pdf"),width=MAPWIDTH,height=MAPHEIGHT)
+plot_loaloa(loagridraster,breaks = br)
 dev.off()
 
 # Smooth Effects #
@@ -408,6 +459,41 @@ loagridraster <- raster(loagridpixels)
 pdf(file.path(plotpath,"marg-spatialfield-upper.pdf"),width=MAPWIDTH,height=MAPHEIGHT)
 plot_loaloa(loagridraster,breaks = bU)
 dev.off()
+
+# Mean #
+# Estimate
+Xpred <- themam$mam$Xpred
+Xpred[ ,1] <- 1
+meanest_marg <- as.numeric(Xpred %*% themam$mam$coefsmooth)
+meanest_marg_se <- sqrt(with(themam$variance,colSums((mamvarfactor_cond %*% t(Xpred))^2) + colSums((mamvarfactor_marg %*% t(Xpred))^2)))
+# Estimates
+smoothpreds <- data.frame(pred = ilogit(meanest_marg))
+loagridpointsframe <- SpatialPointsDataFrame(coords = loagridpoints@coords,data = smoothpreds,proj4string = loagridpoints@proj4string,bbox = loagridpoints@bbox)
+loagridpixels <- SpatialPixelsDataFrame(loagridpointsframe,data = loagridpointsframe@data)
+loagridraster <- raster(loagridpixels)
+pdf(file.path(plotpath,"marg-mean-est.pdf"),width=MAPWIDTH,height=MAPHEIGHT)
+plot_loaloa(loagridraster,breaks = br)
+dev.off()
+
+# Lower CI
+smoothpreds <- data.frame(pred = ilogit(meanest_marg - 2*meanest_marg_se))
+loagridpointsframe <- SpatialPointsDataFrame(coords = loagridpoints@coords,data = smoothpreds,proj4string = loagridpoints@proj4string,bbox = loagridpoints@bbox)
+loagridpixels <- SpatialPixelsDataFrame(loagridpointsframe,data = loagridpointsframe@data)
+loagridraster <- raster(loagridpixels)
+pdf(file.path(plotpath,"marg-mean-lower.pdf"),width=MAPWIDTH,height=MAPHEIGHT)
+plot_loaloa(loagridraster,breaks = br)
+dev.off()
+
+# Upper CI
+smoothpreds <- data.frame(pred = ilogit(meanest_marg + 2*meanest_marg_se))
+loagridpointsframe <- SpatialPointsDataFrame(coords = loagridpoints@coords,data = smoothpreds,proj4string = loagridpoints@proj4string,bbox = loagridpoints@bbox)
+loagridpixels <- SpatialPixelsDataFrame(loagridpointsframe,data = loagridpointsframe@data)
+loagridraster <- raster(loagridpixels)
+pdf(file.path(plotpath,"marg-mean-upper.pdf"),width=MAPWIDTH,height=MAPHEIGHT)
+plot_loaloa(loagridraster,breaks = br)
+dev.off()
+
+
 
 ## The random intercepts ##
 
