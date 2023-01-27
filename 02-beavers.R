@@ -98,3 +98,62 @@ ggsave(filename = file.path(plotpath,'beaver-time-female.pdf'),plot = ggF,width=
 ggsave(filename = file.path(plotpath,'beaver-time-male.pdf'),plot = ggM,width=PLOTWIDTH,height=PLOTHEIGHT)
 cat("Done. Output saved at",globalpath,"\n")
 
+# UPDATE 2022/12/08
+# Add the conditional model estimates, for talk
+bv.cond.uci <- bv.mam$conditional$fitted+1.96*bv.mam$conditional$fitted_se
+bv.cond.lci <- bv.mam$conditional$fitted-1.96*bv.mam$conditional$fitted_se
+dfplotF_mam$cond_fitted <- bv.mam$conditional$fitted[101:200]
+dfplotF_mam$cond_uci <- bv.cond.uci[101:200]
+dfplotF_mam$cond_lci <- bv.cond.lci[101:200]
+
+dfplotM_mam$cond_fitted <- bv.mam$conditional$fitted[1:100]
+dfplotM_mam$cond_uci <- bv.cond.uci[1:100]
+dfplotM_mam$cond_lci <- bv.cond.lci[1:100]
+
+ggF_withcond <- ggplot(data=dfplotF_mam,aes(x=time,y=fitted))+
+  geom_ribbon(aes(ymin=lci,ymax=uci),fill="gray",alpha=0.65)+
+  geom_ribbon(aes(ymin=cond_lci,ymax=cond_uci),fill="lightgray",alpha=0.65) +
+  geom_line()+
+  geom_line(aes(y = cond_fitted),linetype = 'dashed') +
+  ylim(c(-2.5,3.5))+
+  xlab("Day of Year")+
+  ylab(expression(f^M~(time)))+
+  ggtitle("Female") +
+  theme(text = element_text(size = GGPLOTTEXTSIZE))
+
+ggM_withcond <- ggplot(data=dfplotM_mam,aes(x=time,y=fitted))+
+  geom_ribbon(aes(ymin=lci,ymax=uci),fill="gray",alpha=0.65)+
+  geom_ribbon(aes(ymin=cond_lci,ymax=cond_uci),fill="lightgray",alpha=0.65) +
+  geom_line()+
+  geom_line(aes(y = cond_fitted),linetype = 'dashed') +
+  ylim(c(-2.5,3.5))+
+  xlab("Day of Year")+
+  ylab(expression(f^M~(time)))+
+  ggtitle("Male") +
+  theme(text = element_text(size = GGPLOTTEXTSIZE))
+
+ggsave(filename = file.path(plotpath,'beaver-time-female-cond.pdf'),plot = ggF_withcond,width=PLOTWIDTH,height=PLOTHEIGHT)
+ggsave(filename = file.path(plotpath,'beaver-time-male-cond.pdf'),plot = ggM_withcond,width=PLOTWIDTH,height=PLOTHEIGHT)
+
+ggF_onlycond <- ggplot(data=dfplotF_mam,aes(x=time,y=fitted))+
+  geom_ribbon(aes(ymin=cond_lci,ymax=cond_uci),fill="lightgray",alpha=0.65) +
+  geom_line(aes(y = cond_fitted),linetype = 'dashed') +
+  ylim(c(-2.5,3.5))+
+  xlab("Day of Year")+
+  ylab(expression(f^M~(time)))+
+  ggtitle("Female") +
+  theme(text = element_text(size = GGPLOTTEXTSIZE))
+
+ggM_onlycond <- ggplot(data=dfplotM_mam,aes(x=time,y=fitted))+
+  geom_ribbon(aes(ymin=cond_lci,ymax=cond_uci),fill="lightgray",alpha=0.65) +
+  geom_line(aes(y = cond_fitted),linetype = 'dashed') +
+  ylim(c(-2.5,3.5))+
+  xlab("Day of Year")+
+  ylab(expression(f^M~(time)))+
+  ggtitle("Male") +
+  theme(text = element_text(size = GGPLOTTEXTSIZE))
+
+ggsave(filename = file.path(plotpath,'beaver-time-female-onlycond.pdf'),plot = ggF_onlycond,width=PLOTWIDTH,height=PLOTHEIGHT)
+ggsave(filename = file.path(plotpath,'beaver-time-male-onlycond.pdf'),plot = ggM_onlycond,width=PLOTWIDTH,height=PLOTHEIGHT)
+
+
