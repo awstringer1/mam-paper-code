@@ -72,7 +72,7 @@ get_data_mam <- function(SSmat,x1,x2,x3,K,Nk){
   return(dat)
 }
 
-do_simulation_multiple <- function(K,Nk,sigma0,sigma3,rho,iter=0,verbose=FALSE) {
+do_simulation_multiple <- function(K,Nk,sigma0,sigma3,rho,iter=0,verbose=TRUE) {
   # note: sigma3 = 0 ==> only intercept
   slopes <- sigma3 > 0
   # note: rho = 0 ==> independent slope/intercept
@@ -95,12 +95,16 @@ do_simulation_multiple <- function(K,Nk,sigma0,sigma3,rho,iter=0,verbose=FALSE) 
   
   ## fit models
   # GAM #
+  
+  tm <- Sys.time()
   gam1 <- gam(y~s(x1)+s(x2)+x3,data=dat,family=binomial(),method="REML")
   gamfit <- predict(gam1,newdata=dat2pred,se.fit=TRUE)
   gamfitted <- gamfit$fit
   gamfitted_se <- gamfit$se.fit
+  if (verbose) cat("Fitting gam took",as.numeric(difftime(Sys.time(),tm,units='secs')),"seconds.\n")
   
   # MAM (proposed approach)
+  tm <- Sys.time()
   if(!slopes){
     themam <- mam(smooth = list(s(x1),s(x2)),
                   re = y ~ (1|id),
@@ -109,9 +113,10 @@ do_simulation_multiple <- function(K,Nk,sigma0,sigma3,rho,iter=0,verbose=FALSE) 
                   margdat = dat,
                   preddat = dat2pred,
                   control = mam_control(
-                    method = 'trust',
+                    # method = 'trust',
+                    method = 'BFGS',
                     varmethod = 1,
-                    verbose = FALSE,
+                    verbose = verbose,
                     retcond = TRUE))
   }else if(indepU){
     themam <- mam(smooth = list(s(x1),s(x2)),
@@ -121,9 +126,10 @@ do_simulation_multiple <- function(K,Nk,sigma0,sigma3,rho,iter=0,verbose=FALSE) 
                   margdat = dat,
                   preddat = dat2pred ,
                   control = mam_control(
-                    method = 'trust',
+                    # method = 'trust',
+                    method = 'BFGS',
                     varmethod = 1,
-                    verbose = FALSE,
+                    verbose = verbose,
                     retcond = TRUE))
   }else{
     themam <- NULL
@@ -135,9 +141,10 @@ do_simulation_multiple <- function(K,Nk,sigma0,sigma3,rho,iter=0,verbose=FALSE) 
                          margdat = dat,
                          preddat = dat2pred ,
                          control = mam_control(
-                           method = 'trust',
+                           # method = 'trust',
+                           method = 'BFGS',
                            varmethod = 1,
-                           verbose = FALSE,
+                           verbose = verbose,
                            retcond = TRUE))
     )
     if(is.null(themam)){
@@ -150,21 +157,26 @@ do_simulation_multiple <- function(K,Nk,sigma0,sigma3,rho,iter=0,verbose=FALSE) 
                          control = mam_control(
                            method = 'BFGS',
                            varmethod = 1,
-                           verbose = FALSE,
+                           verbose = verbose,
                            retcond = TRUE))
     }
     
   }
-  
+  if (verbose) cat("Fitting mam took",as.numeric(difftime(Sys.time(),tm,units='secs')),"seconds.\n")
+
   
   # (v) double-penalized mam (i.e. penalty at the conditional and marginal stage)
+  tm <- Sys.time()
   dat$gpix <- logit(themam$marginal$prob) #old: #mam$marginalmean$fitted
   mam2 <- gam(gpix~s(x1)+s(x2)+x3,data=dat)
   mam2fit <- predict(mam2,newdata=dat2pred,se.fit=TRUE)
   mam2fitted <- mam2fit$fit
   mam2fitted_se <- mam2fit$se.fit ## these are naive
-  
+  if (verbose) cat("Fitting double mam took",as.numeric(difftime(Sys.time(),tm,units='secs')),"seconds.\n")
+
+
   # (vi) GAMM (conditional)
+  tm <- Sys.time()
   if(slopes==FALSE){
     gamm <- gamm4(y ~ s(x1)+s(x2)+x3,random=~(1|id), data = dat,family = binomial())
   }else if(indepU==TRUE){
@@ -176,9 +188,12 @@ do_simulation_multiple <- function(K,Nk,sigma0,sigma3,rho,iter=0,verbose=FALSE) 
   gammfitted <- gammfit$fit
   gammfitted_se <- gammfit$se.fit
   gammpred <- ranef(gamm$mer)$id
+  if (verbose) cat("Fitting gamm took",as.numeric(difftime(Sys.time(),tm,units='secs')),"seconds.\n")
+
   
   
   ## get fitted values
+  tm <- Sys.time()
   fitteddat <- as_tibble(dat2pred) %>%
     mutate(
       ## Simulation parameters
@@ -292,7 +307,8 @@ do_simulation_multiple <- function(K,Nk,sigma0,sigma3,rho,iter=0,verbose=FALSE) 
     gamm_sd_slope=gammtheta['sd-x3'],
     gamm_cor=gammtheta['cor']
   )
-  
+  if (verbose) cat("Post-processing took",as.numeric(difftime(Sys.time(),tm,units='secs')),"seconds.\n")
+
   
   return(list(fitteddat, preddat, varcomp))
 }
