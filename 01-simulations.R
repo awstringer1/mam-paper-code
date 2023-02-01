@@ -339,6 +339,7 @@ for (i in 1:length(simlisttodo)) simlisttodo[[i]] <- as.numeric(simstodo[i, ])
 dosim <- function(lst) {
   cat("Simulation",lst[7],"\n")
   sim <- tryCatch(do_simulation_multiple(K=lst[1],Nk=lst[2],sigma0=lst[3],sigma3=lst[4],rho=lst[5],iter=lst[6]),error=function(e) e)
+  if (inherits(sim,'condition')) return(NULL)
   sim$sim <- lst[6]
   sim
 }
