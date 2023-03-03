@@ -314,7 +314,11 @@ do_simulation_multiple <- function(K,Nk,sigma0,sigma3,rho,iter=0,verbose=TRUE) {
 }
 
 ## Simulations ##
+<<<<<<< HEAD
 B <- 1000
+=======
+B <- 2000
+>>>>>>> c2992659320d7ffd40867d967df8bf38cad28458
 simstodo_intercept <- expand.grid(
   K = c(100,200),
   Nk = c(10,20),
@@ -347,7 +351,6 @@ dosim <- function(lst) {
 cat("Doing",B,"sims.\n")
 tm <- Sys.time()
 sims2 <- mclapply(simlisttodo,dosim)
-simlist2 <- Reduce(rbind,sims2)
 
 which_errs <- which(Reduce(c,lapply(sims2,inherits,what='condition')))
 err_messages <- lapply(sims2[which_errs],'[[','message')
@@ -360,16 +363,24 @@ rownames(err_messages) <- NULL
 
 suffix <- gsub('-', '', as.character(Sys.Date()))
 
-save(simlist2,file = file.path(savepath,paste0("sims-",suffix,".RData")))
+save(sims2,file = file.path(savepath,paste0("simsraw-",suffix,".RData")))
+# save(simlist2,file = file.path(savepath,paste0("sims-",suffix,".RData")))
 
 tm2 <- round(as.numeric(difftime(Sys.time(),tm,units='secs')),1)
 cat("Done. It took ",tm2," seconds.\n",sep="")
 
-numsim <- nrow(simstodo)
-errs <- !sapply(simlist2[1:numsim],inherits,what='tbl_df')
-simfitted <- bind_rows(simlist2[(0*numsim+(1:numsim))[!errs]])
-simpred <-   bind_rows(simlist2[(1*numsim+(1:numsim))[!errs]])
-simtheta <-  bind_rows(simlist2[(2*numsim+(1:numsim))[!errs]])
+
+# errs <- !sapply(simlist2[1:numsim],inherits,what='tbl_df')
+errs <- !sapply(sims2,function(x) is.tbl(x[[1]])) ## changed error handling since simlist2 already ignores the NULL elements and screws up the rest
+
+numsim <- length(sims2[!errs]) ## without errors
+simlist2 <- Reduce(rbind,sims2[!errs])
+save(simlist2,file = file.path(savepath,paste0("sims-",suffix,".RData")))
+
+
+simfitted <- bind_rows(simlist2[(0*numsim+(1:numsim))])
+simpred <-   bind_rows(simlist2[(1*numsim+(1:numsim))])
+simtheta <-  bind_rows(simlist2[(2*numsim+(1:numsim))])
 
 
 ###############################################################################
