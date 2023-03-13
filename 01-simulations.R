@@ -314,11 +314,8 @@ do_simulation_multiple <- function(K,Nk,sigma0,sigma3,rho,iter=0,verbose=TRUE) {
 }
 
 ## Simulations ##
-<<<<<<< HEAD
-B <- 1000
-=======
 B <- 2000
->>>>>>> c2992659320d7ffd40867d967df8bf38cad28458
+
 simstodo_intercept <- expand.grid(
   K = c(100,200),
   Nk = c(10,20),
@@ -520,27 +517,93 @@ for (i in 1:nrow(uniquesims)) {
   }
 }
 
+### Relative bias in SEs
+
+sesd_x1 <- simfitted %>%
+  filter(x2==0, x3==0) %>%
+  group_by(x1,K,Nk,sigma0,sigma3,rho) %>%
+  summarize(
+    sesd_gam = (mean(gammargse)/sd(gammargfitted))-1,
+    sesd_mam = (mean(mammargse)/sd(mammargfitted))-1
+  )
+
+sesd_x2 <- simfitted %>%
+  filter(x1==0, x3==0) %>%
+  group_by(x2,K,Nk,sigma0,sigma3,rho) %>%
+  summarize(
+    sesd_gam = (mean(gammargse)/sd(gammargfitted))-1,
+    sesd_mam = (mean(mammargse)/sd(mammargfitted))-1
+  )
+
+make_sesd_plot <- function(K,Nk,sigma0,sigma3,rho,xp) {
+  if (xp==1) {
+    rangesesd_x1 <- c(-0.5,0.5)
+    
+    plotdat <- filter(sesd_x1,K==!!K,Nk==!!Nk,sigma0==!!sigma0,sigma3==!!sigma3,rho==!!rho)
+    
+    gamplot <- ggplot(data=plotdat,aes(x=x1,y=sesd_gam)) +
+      geom_line() +
+      ylim(rangesesd_x1) +
+      ylab("Rel. Bias(SE)") +
+      theme(text = element_text(size = GGPLOTTEXTSIZE))
+    mamplot <- ggplot(data=plotdat,aes(x=x1,y=sesd_mam)) +
+      geom_line() +
+      ylim(rangesesd_x1) +
+      ylab("Rel. Bias(SE)") +
+      theme(text = element_text(size = GGPLOTTEXTSIZE))
+    
+  } else if (xp==2) {
+    rangesesd_x2 <- c(-0.5,0.5)
+    plotdat <- filter(sesd_x2,K==!!K,Nk==!!Nk,sigma0==!!sigma0,sigma3==!!sigma3,rho==!!rho)
+    
+    gamplot <- ggplot(data=plotdat,aes(x=x2,y=sesd_gam)) +
+      geom_line() +
+      ylim(rangesesd_x2) +
+      ylab("Rel. Bias(SE)") +
+      theme(text = element_text(size = GGPLOTTEXTSIZE))
+    mamplot <- ggplot(data=plotdat,aes(x=x2,y=sesd_mam)) +
+      geom_line() +
+      ylim(rangesesd_x2) +
+      ylab("Rel. Bias(SE)") +
+      theme(text = element_text(size = GGPLOTTEXTSIZE))
+  } else {
+    stop("Unknown covariate.")
+  }
+  list(gam=gamplot,mam=mamplot)
+}
+
+
+
 ###############################################################################
 ## Table for paper
 estimationtable_x1 <- simfitted %>%
   filter(x2==0,x3==0) %>%
-  group_by(K,Nk,sigma0,sigma3,rho) %>%
+  group_by(K,Nk,sigma0,sigma3,rho,x1) %>%
   summarize(
     bias_x1_gam = mean(gammargbiasx1),
     covr_x1_gam = mean(gammargcovrx1),
+    sesd_x1_gam = (mean(gammargse)/sd(gammargfitted)),
     bias_x1_mam = mean(mammargbiasx1),
-    covr_x1_mam = mean(mammargcovrx1)
-  )
-
+    covr_x1_mam = mean(mammargcovrx1),
+    sesd_x1_mam = (mean(mammargse)/sd(mammargfitted))
+  )%>%
+  group_by(K,Nk,sigma0,sigma3,rho) %>% ## second grouping because now we collapse over x1 (now that we have ratios of SE to SD)
+  summarize_all(mean)
+  
 estimationtable_x2 <- simfitted %>%
   filter(x1==0,x3==0) %>%
-  group_by(K,Nk,sigma0,sigma3,rho) %>%
+  group_by(K,Nk,sigma0,sigma3,rho,x2) %>%
   summarize(
     bias_x2_gam = mean(gammargbiasx2),
     covr_x2_gam = mean(gammargcovrx2),
+    sesd_x2_gam = (mean(gammargse)/sd(gammargfitted)),
     bias_x2_mam = mean(mammargbiasx2),
-    covr_x2_mam = mean(mammargcovrx2)
-  )
+    covr_x2_mam = mean(mammargcovrx2),
+    sesd_x2_mam = (mean(mammargse)/sd(mammargfitted))
+  ) %>%
+  group_by(K,Nk,sigma0,sigma3,rho) %>% ## second grouping because now we collapse over x2 (now that we have ratios of SE to SD)
+  summarize_all(mean)
+
 
 predinttable <- simpred %>%
   group_by(K,Nk,sigma0,sigma3,rho) %>%
@@ -566,8 +629,8 @@ varcomptable <- simtheta %>%
 joinvars <- c("K","Nk","sigma0","sigma3","rho")
 resultstable <- estimationtable_x1 %>%
   left_join(estimationtable_x2,by = joinvars) %>%
-  left_join(predinttable,by = joinvars) %>%
-  left_join(varcomptable,by = joinvars)
+  left_join(varcomptable,by = joinvars) %>%
+  left_join(predinttable,by = joinvars) 
 
 write_csv(resultstable,file = file.path(plotpath,"numeric-summaries.csv"))
 
@@ -593,21 +656,24 @@ cat("Done. Output saved at",globalpath,"\n")
 #   filter(sigma0==2,sigma3==1,rho==.5) %>%
 #   arrange(sigma0,K,Nk) %>%
 #   mutate(across(contains('covr'),~round(.x*100))) %>%
-#   dplyr::select(contains(c("K","Nk","sigma0",'mam'))) %>%
+#   mutate(across(contains('sesd'),~((.x-1)))) %>%
+#   dplyr::select(contains(c("K","Nk",'mam'))) %>%
 #   knitr::kable(
 #     digits = 2,
-#     format = 'markdown' # markdown, not latex, easier copying
+#     format = 'latex' # markdown, not latex, easier copying
 #   )
 # # Table 1 (supplememnt)
 # resultstable %>%
 #   filter(sigma3==0,rho==0) %>%
 #   arrange(sigma0,K,Nk) %>%
 #   mutate(across(contains('covr'),~round(.x*100))) %>%
+#   mutate(across(contains('sesd'),~((.x-1)))) %>%
 #   dplyr::select(-contains(c("slope","cor"))) %>%
-#   # dplyr::select(contains(c("K","Nk","sigma0",'mam'))) %>% # For printing each variable individually
+#   dplyr::select(contains(c("K","Nk","sigma0",'gam'))) %>% # For printing each variable individually
+#   dplyr::select(!contains(c('gamm'))) %>%
 #   knitr::kable(
 #     digits = 2,
-#     format = 'markdown' # markdown, not latex, easier copying
+#     format = 'latex' # markdown, not latex, easier copying
 #   )
 
 
