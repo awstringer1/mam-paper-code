@@ -303,6 +303,7 @@ evi_gg_data <- data.frame(
 )
 myylim = c(-2,2)
 evi_gam_plot <- ggplot(data=evi_gg_data,aes(x=evi,y=pred))+
+  geom_hline(yintercept=0, linetype='dashed', col = 'darkgray')+
   geom_ribbon(aes(ymin=lower,ymax=upper),fill="gray",alpha=0.65)+
   geom_line()+
   ylim(myylim)+
@@ -322,6 +323,7 @@ elev_gg_data <- data.frame(
 )
 myylim = c(-5,2.5)
 elev_gam_plot <- ggplot(data=elev_gg_data,aes(x=elevation,y=pred))+
+  geom_hline(yintercept=0, linetype='dashed', col = 'darkgray')+
   geom_ribbon(aes(ymin=lower,ymax=upper),fill="gray",alpha=0.65)+
   geom_line()+
   ylim(myylim)+
@@ -385,6 +387,7 @@ evi_gg_data <- data.frame(
 )
 myylim = c(-2,2)
 evi_mam_plot <- ggplot(data=evi_gg_data,aes(x=evi,y=pred))+
+  geom_hline(yintercept=0, linetype='dashed', col = 'darkgray')+
   geom_ribbon(aes(ymin=lower,ymax=upper),fill="gray",alpha=0.65)+
   geom_line()+
   ylim(myylim)+
@@ -415,6 +418,7 @@ elev_gg_data <- data.frame(
   upper = elevest_marg + 2*elevest_marg_se
 )
 elev_mam_plot <- ggplot(data=elev_gg_data,aes(x=elevation,y=pred))+
+  geom_hline(yintercept=0, linetype='dashed', col = 'darkgray')+
   geom_ribbon(aes(ymin=lower,ymax=upper),fill="gray",alpha=0.65)+
   geom_line()+
   ylim(myylim)+

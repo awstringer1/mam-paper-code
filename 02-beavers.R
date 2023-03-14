@@ -74,6 +74,7 @@ dfplotF_mam <- data.frame(time=beaverspred$time[101:200],
                           uci=bv.mam.uci[101:200],
                           lci=bv.mam.lci[101:200])
 ggF <- ggplot(data=dfplotF_mam,aes(x=time,y=fitted))+
+  geom_hline(yintercept=0, linetype='dashed', col = 'darkgray')+
   geom_ribbon(aes(ymin=lci,ymax=uci),fill="gray",alpha=0.65)+
   geom_line()+
   ylim(myrange)+
@@ -86,6 +87,7 @@ dfplotM_mam <- data.frame(time=beaverspred$time[1:100],
                           uci=bv.mam.uci[1:100],
                           lci=bv.mam.lci[1:100])
 ggM <- ggplot(data=dfplotM_mam,aes(x=time,y=fitted))+
+  geom_hline(yintercept=0, linetype='dashed', col = 'darkgray')+
   geom_ribbon(aes(ymin=lci,ymax=uci),fill="gray",alpha=0.65)+
   geom_line()+
   ylim(myrange)+
