@@ -571,6 +571,19 @@ make_sesd_plot <- function(K,Nk,sigma0,sigma3,rho,xp) {
   }
   list(gam=gamplot,mam=mamplot)
 }
+# Save plots to disk
+uniquesims <- filter(simstodo,itr==1)
+for (i in 1:nrow(uniquesims)) {
+  rw <- uniquesims[i, ,drop=FALSE]
+  for (xp in c(1,2)) {
+    with(rw,{
+      tmp <- make_sesd_plot(K,Nk,sigma0,sigma3,rho,xp)
+      nm <- paste0("-sesd-K",K,"-Nk",Nk,"-sl",sigma0,"-ss",sigma3,"-r",10*rho,"-x",xp,".pdf")
+      ggsave(file = file.path(plotpath,paste0("gam",nm)),tmp$gam,width=PLOTWIDTH,height=PLOTHEIGHT)
+      ggsave(file = file.path(plotpath,paste0("mam",nm)),tmp$mam,width=PLOTWIDTH,height=PLOTHEIGHT)
+    })
+  }
+}
 
 
 
