@@ -42,9 +42,9 @@ yy <- (1-mix)*yy0+mix*yy1 ## mixture of 2 normals
 xx <- rnorm(nn) ## normal distribution with same variance
 
 ## histograms
-p1 <- hist(yy,breaks=20)                     
-p2 <- hist(xx,breaks=p1$breaks)   
-plot( p2, col=rgb(0,0,1,0.5), xlim=c(-10,10),ylim=c(0,max(c(p1$counts,p2$counts))))  # first histogram
+p1 <- hist(yy,xlab="Ui",breaks=20)                     
+p2 <- hist(xx,xlab="Ui",breaks=p1$breaks)   
+plot( p2, col=rgb(0,0,1,0.5), xlim=c(-10,10),ylim=c(0,max(c(p1$counts,p2$counts))),xlab="Ui",main="Assumed vs True Distribution")  # first histogram
 plot( p1, col=rgb(1,0,0,0.5), xlim=c(-10,10),ylim=c(0,max(c(p1$counts,p2$counts))), add=T)
 
 ## QQ plot
