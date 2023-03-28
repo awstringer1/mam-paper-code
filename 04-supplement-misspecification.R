@@ -42,9 +42,10 @@ yy <- (1-mix)*yy0+mix*yy1 ## mixture of 2 normals
 xx <- rnorm(nn) ## normal distribution with same variance
 
 ## histograms
+par(mfrow=c(1,2))
 p1 <- hist(yy,xlab="Ui",breaks=20)                     
 p2 <- hist(xx,xlab="Ui",breaks=p1$breaks)   
-plot( p2, col=rgb(0,0,1,0.5), xlim=c(-10,10),ylim=c(0,max(c(p1$counts,p2$counts))),xlab="Ui",main="Assumed vs True Distribution")  # first histogram
+plot( p2, col=rgb(0,0,1,0.5), xlim=c(-10,10),ylim=c(0,max(c(p1$counts,p2$counts))),xlab="Ui",main="")#,main="Assumed vs True Distribution")  # first histogram
 plot( p1, col=rgb(1,0,0,0.5), xlim=c(-10,10),ylim=c(0,max(c(p1$counts,p2$counts))), add=T)
 
 ## QQ plot
@@ -53,7 +54,7 @@ qqplot(y=yy,
        xlab = "Normal",
        ylab = "Heavy-tailed Mixture")
 abline(0,1,lty=2)
-
+par(mfrow=c(1,1))
 
 
 get_data_misp <- function(conditional,x1,x2,x3,K,Nk){
